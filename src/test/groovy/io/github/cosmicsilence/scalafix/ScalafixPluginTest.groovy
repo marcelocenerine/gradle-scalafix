@@ -154,6 +154,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'checkScalafixMain task configuration validation when autoConfigureSemanticDb is enabled'() {
@@ -181,6 +182,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'checkScalafixTest task configuration validation'() {
@@ -207,6 +209,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'checkScalafixTest task configuration validation when autoConfigureSemanticDb is enabled'() {
@@ -234,6 +237,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'scalafix task configuration validation'() {
@@ -274,6 +278,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'scalafixMain task configuration validation when autoConfigureSemanticDb is enabled'() {
@@ -301,6 +306,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'scalafixTest task configuration validation'() {
@@ -327,6 +333,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'scalafixTest task configuration validation when autoConfigureSemanticDb is enabled'() {
@@ -354,6 +361,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'scalafix<SourceSet> task configuration validation when additional source set is present'() {
@@ -382,6 +390,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'scalafix<SourceSet> task configuration validation when additional source set is present and autoConfigureSemanticDb is enabled'() {
@@ -411,6 +420,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'checkScalafix<SourceSet> task configuration validation when additional source set is present'() {
@@ -439,6 +449,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions == DEFAULT_COMPILER_OPTS
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        !task.semanticdbConfigured
     }
 
     def 'checkScalafix<SourceSet> task configuration validation when additional source set is present and autoConfigureSemanticDb is enabled'() {
@@ -468,6 +479,7 @@ class ScalafixPluginTest extends Specification {
         task.compileOptions.find { it.startsWith("-Xplugin:") }
         task.scalaVersion == SCALA_VERSION
         task.rules.get().containsAll(['Foo', 'Bar'])
+        task.semanticdbConfigured
     }
 
     def 'scalafix uses the config file provided via extension'() {

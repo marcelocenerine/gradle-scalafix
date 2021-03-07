@@ -33,9 +33,9 @@ community (e.g. [scaluzzi](https://github.com/vovapolu/scaluzzi)).
 This is the recommended approach if you want to repeatedly run Scalafix as part of your build and day-to-day development.
 For that you need to create a file named `.scalafix.conf` in the root directory of your project and enter the configuration 
 for the rules you want to have enabled. The configuration uses the HOCON syntax and is well documented on the Scalafix 
-[website](https://scalacenter.github.io/scalafix/docs/users/configuration.html). There are also some more complete examples
-in open source projects (such as [scalazzi](https://github.com/scalaz/scalazzi/blob/master/scalafix.conf)) that are worth
-taking a look. Below is a basic example of using one of the Scalafix's built-in rules so you can quickly get started:
+[website](https://scalacenter.github.io/scalafix/docs/users/configuration.html). If you are using external/custom rules,
+please take a look at the documentation provided by them. Below is a basic example of using one of the Scalafix's built-in 
+rules so you can quickly get started:
 
 
 ```
