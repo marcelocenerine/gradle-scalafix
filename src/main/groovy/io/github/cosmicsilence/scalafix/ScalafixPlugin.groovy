@@ -51,7 +51,7 @@ class ScalafixPlugin implements Plugin<Project> {
 
         project.tasks.named('check').configure { it.dependsOn checkTask }
 
-        if (!extension.autoConfigureSemanticdb) { // TODO remove in a future version
+        if (!extension.semanticdbEnabled && !extension.autoConfigureSemanticdb) { // TODO remove in a future version
             logger.warn("WARNING: the 'autoConfigureSemanticdb' property is deprecated. Please use 'semanticdb.autoconfigure' instead")
         }
 
@@ -71,11 +71,6 @@ class ScalafixPlugin implements Plugin<Project> {
                                            ScalafixExtension extension) {
         def taskName = mainTask.name + sourceSet.name.capitalize()
         def taskProvider = project.tasks.register(taskName, ScalafixTask, { scalafixTask ->
-            if (extension.semanticdbEnabled) {
-                configureSemanticdbCompilerPlugin(project, sourceSet, extension)
-                scalafixTask.dependsOn sourceSet.compileTask
-            }
-
             scalafixTask.description = "${mainTask.description} in '${sourceSet.name}'"
             scalafixTask.group = mainTask.group
             scalafixTask.sourceRoot = project.projectDir.path
@@ -93,6 +88,15 @@ class ScalafixPlugin implements Plugin<Project> {
             scalafixTask.classpath.set(project.provider({ sourceSet.fullClasspath.collect { it.path } }))
             scalafixTask.compileOptions.set(project.provider({ sourceSet.compilerOptions }))
             scalafixTask.semanticdbConfigured = extension.semanticdbEnabled
+
+            if (extension.semanticdbEnabled) {
+                // configures the semanticdb compiler plugin during the execution phase, but before the compile task
+                // is executed. This prevents dependencies from being resolved too early.
+                sourceSet.compileTask.doFirst {
+                    configureSemanticdbCompilerPlugin(project, sourceSet, extension)
+                }
+                scalafixTask.dependsOn sourceSet.compileTask
+            }
         })
 
         mainTask.dependsOn taskProvider
