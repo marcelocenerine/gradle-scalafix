@@ -104,7 +104,6 @@ The plugin defines an extension with the namespace `scalafix` that allows to cus
 |`configFile`                  |`String`                           | Same as above. |
 |`includes`                    |`SetProperty<String>`              | [Ant-like pattern](https://ant.apache.org/manual/dirtasks.html) to filter what Scala source files should be processed by Scalafix. Filter is applied to package portion of the source file path. By default all files are included. |
 |`excludes`                    |`SetProperty<String>`              | [Ant-like pattern](https://ant.apache.org/manual/dirtasks.html) to exclude Scala source files from being processed by Scalafix. Filter is applied to package portion of the source file path. By default no files are excluded. |
-|`scalaVersion`                |`String`                           | The version of Scala used to compile the source files. If not informed, the plugin attempts to detect it by resolving the compile dependencies (which works well in most cases). However, if `semanticdb.autoConfigure` is enabled (default) and this property is not informed, the dependency resolution will take place during the [configuration phase](https://docs.gradle.org/current/userguide/build_lifecycle.html#sec:configuration_and_execution_of_a_single_project_build), which could cause conflicts with other plugins (see issue [#49](https://github.com/cosmicsilence/gradle-scalafix/issues/49)). To prevent that, please provide the full Scala version upfront using this property. |
 |`ignoreSourceSets`            |`SetProperty<String>`              | Name of source sets to which the Scalafix plugin should not be applied (by default this plugin is applied to all source sets defined in the project). This option can be used (e.g.) to ignore source sets that point to the same source files of other source sets (which would cause them to be processed twice). Be careful with plugin application ordering. E.g. when using this plugin together with scoverage, scoverage plugin should be applied first.|
 |~~`autoConfigureSemanticdb`~~ |`Boolean`                          | **Deprecated**: please use `semanticdb.autoConfigure` instead (see below). |
 |`semanticdb`                  |`SemanticdbParameters`             | Used to configure the SemanticDB compiler plugin. See [`semanticdb`](#semanticdb-closure) |
@@ -122,7 +121,6 @@ scalafix {
     configFile = file("config/myscalafix.conf")
     includes = ["/com/**/*.scala"]
     excludes = ["**/generated/**"]
-    scalaVersion = "2.13.6
     ignoreSourceSets = ["scoverage"]
     semanticdb {
         autoConfigure = true

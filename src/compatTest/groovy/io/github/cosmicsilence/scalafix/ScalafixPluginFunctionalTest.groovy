@@ -233,13 +233,13 @@ scalafix {
         createSourceFile(projectDir, 'object Foo', 'noScala')
 
         when:
-        BuildResult buildResult = runGradle(projectDir, 'scalafix')
+        runGradle(projectDir, 'scalafix')
 
         then:
         UnexpectedBuildFailure err = thrown()
         err.message.contains "Task :scalafixNoScala FAILED"
-        err.message.contains "Unable to detect the Scala version for the 'noScala' source set. Please inform it via the 'scalaVersion' " +
-                "property in the scalafix extension or consider adding 'noScala' to 'ignoreSourceSets'"
+        err.message.contains "Unable to detect the Scala version for the 'noScala' source set. Please ensure it " +
+                "declares dependency to scala-library or consider adding it to 'ignoreSourceSets'"
         err.message.contains 'BUILD FAILED'
     }
 
