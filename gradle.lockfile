@@ -1,7 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ch.epfl.scala:scalafix-interfaces:0.14.4=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+ch.epfl.scala:scalafix-interfaces:0.14.6=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.get-coursier:interface:1.0.28=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=compatTestCompileClasspath,testCompileClasspath
 org.codehaus.groovy:groovy:3.0.12=compatTestCompileClasspath,compatTestRuntimeClasspath,testCompileClasspath,testRuntimeClasspath

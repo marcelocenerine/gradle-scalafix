@@ -27,7 +27,7 @@ java {
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
-    implementation 'ch.epfl.scala:scalafix-interfaces:0.14.4'
+    implementation 'ch.epfl.scala:scalafix-interfaces:0.14.6'
     compatTestImplementation gradleTestKit()
     compatTestImplementation 'org.spockframework:spock-core:2.3-groovy-3.0'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-3.0'
