@@ -91,8 +91,14 @@ class ScalafixPlugin implements Plugin<Project> {
             cfg.description = "Scalafix CLI dependencies for source set '${sourceSet.getName()}'"
         })
         cliCfg.withDependencies { deps ->
-            def scalaVersion = resolveScalaVersion(sourceSet)
-            deps.add(project.dependencies.create(ScalafixProps.getScalafixCliArtifactCoordinates(scalaVersion)))
+            try {
+                def scalaVersion = resolveScalaVersion(sourceSet)
+                deps.add(project.dependencies.create(ScalafixProps.getScalafixCliArtifactCoordinates(scalaVersion)))
+            } catch (GradleException ignored) {
+                // Leave the configuration empty so the ScalafixTask reaches its action phase and reports the
+                // underlying error (unsupported / undetectable Scala version) from there instead of failing
+                // earlier during dependency resolution.
+            }
         }
         return cliCfg
     }
