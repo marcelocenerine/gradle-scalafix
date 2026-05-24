@@ -63,8 +63,8 @@ class ScalafixTask extends SourceTask {
         scalaVersion = objects.property(String)
         compileOptions = objects.listProperty(String)
         classpath = objects.listProperty(String)
-        scalafixCliClasspath = objects.fileCollection()
-        toolClasspath = objects.fileCollection()
+        scalafixCliClasspath = GradleCompat.fileCollection(objects, layout)
+        toolClasspath = GradleCompat.fileCollection(objects, layout)
     }
 
     @TaskAction

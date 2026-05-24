@@ -53,7 +53,7 @@ class ScalafixExtension {
         includes = objects.setProperty(String)
         excludes = objects.setProperty(String)
         ignoreSourceSets = objects.setProperty(String)
-        semanticdb = objects.newInstance(SemanticdbParameters)
+        semanticdb = objects.newInstance(SemanticdbParameters, objects)
     }
 
     /**

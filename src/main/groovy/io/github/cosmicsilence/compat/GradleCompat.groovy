@@ -1,5 +1,6 @@
 package io.github.cosmicsilence.compat
 
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
@@ -10,8 +11,15 @@ import org.gradle.util.GradleVersion
 abstract class GradleCompat {
 
     private static final boolean IS_VERSION_4 = GradleVersion.current().version.startsWith("4.")
+    private static final boolean SUPPORTS_OBJECTS_FILE_COLLECTION =
+            GradleVersion.current().compareTo(GradleVersion.version("5.3")) >= 0
 
     private GradleCompat() {}
+
+    static ConfigurableFileCollection fileCollection(ObjectFactory objects, ProjectLayout layout) {
+        // ObjectFactory.fileCollection() was added in Gradle 5.3; on older versions use ProjectLayout.configurableFiles().
+        return SUPPORTS_OBJECTS_FILE_COLLECTION ? objects.fileCollection() : layout.configurableFiles()
+    }
 
     static RegularFileProperty fileProperty(ObjectFactory objects, ProjectLayout layout, RegularFile defaultFile = null) {
         // ObjectFactory.fileProperty() was added in Gradle 5.0; on 4.x, fall back to ProjectLayout.fileProperty().

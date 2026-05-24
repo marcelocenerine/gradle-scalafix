@@ -29,7 +29,7 @@ class ScalafixPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        def extension = project.extensions.create(EXTENSION, ScalafixExtension)
+        def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
         def configuration = project.configurations.create(EXT_RULES_CONFIGURATION, { Configuration cfg ->
             cfg.description = "Dependencies containing external Scalafix rules"
         })
