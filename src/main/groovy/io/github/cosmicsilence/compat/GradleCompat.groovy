@@ -1,23 +1,24 @@
 package io.github.cosmicsilence.compat
 
-import org.gradle.api.Project
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.util.GradleVersion
 
 abstract class GradleCompat {
 
+    private static final boolean IS_VERSION_4 = GradleVersion.current().version.startsWith("4.")
+
     private GradleCompat() {}
 
-    private static boolean isVersion4(Project project) {
-        return project.gradle.gradleVersion.startsWith("4.")
-    }
+    static RegularFileProperty fileProperty(ObjectFactory objects, ProjectLayout layout, RegularFile defaultFile = null) {
+        // ObjectFactory.fileProperty() was added in Gradle 5.0; on 4.x, fall back to ProjectLayout.fileProperty().
+        def fileProp = IS_VERSION_4 ? layout.fileProperty() : objects.fileProperty()
 
-    static RegularFileProperty fileProperty(Project project, RegularFile defaultFile = null) {
-        def fileProp = isVersion4(project) ? project.layout.fileProperty() : project.objects.fileProperty()
-
-        if (defaultFile) {
-            if (isVersion4(project)) {
+        if (defaultFile != null) {
+            if (IS_VERSION_4) {
                 fileProp.set(defaultFile)
             } else {
                 fileProp.convention(defaultFile)
@@ -27,17 +28,17 @@ abstract class GradleCompat {
         return fileProp
     }
 
-    static Property<Boolean> booleanProperty(Project project, Boolean defaultBoolean = null) {
-        def booleanProp = project.objects.property(Boolean)
+    static Property<Boolean> booleanProperty(ObjectFactory objects, Boolean defaultBoolean = null) {
+        def prop = objects.property(Boolean)
 
-        if (defaultBoolean) {
-            if (isVersion4(project)) {
-                booleanProp.set(project.provider { defaultBoolean })
+        if (defaultBoolean != null) {
+            if (IS_VERSION_4) {
+                prop.set(defaultBoolean)
             } else {
-                booleanProp.convention(defaultBoolean)
+                prop.convention(defaultBoolean)
             }
         }
 
-        return booleanProp
+        return prop
     }
 }
