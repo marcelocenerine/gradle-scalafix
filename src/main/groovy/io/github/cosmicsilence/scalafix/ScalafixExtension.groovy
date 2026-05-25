@@ -44,11 +44,11 @@ class ScalafixExtension {
      */
     private final SemanticdbParameters semanticdb
 
-    private final ProjectLayout projectLayout
+    private final ProjectLayout layout
 
     @Inject
     ScalafixExtension(ObjectFactory objects, ProjectLayout layout) {
-        this.projectLayout = layout
+        this.layout = layout
         configFile = GradleCompat.fileProperty(objects, layout)
         includes = objects.setProperty(String)
         excludes = objects.setProperty(String)
@@ -63,7 +63,7 @@ class ScalafixExtension {
      * project's directory, in this order.
      */
     void setConfigFile(String path) {
-        configFile.set(projectLayout.projectDirectory.file(path))
+        configFile.set(layout.projectDirectory.file(path))
     }
 
     @Nested
