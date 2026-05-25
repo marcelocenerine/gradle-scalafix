@@ -10,26 +10,25 @@ import org.gradle.util.GradleVersion
 
 abstract class GradleCompat {
 
-    private static final boolean IS_VERSION_4 = GradleVersion.current().version.startsWith("4.")
-    private static final boolean SUPPORTS_OBJECTS_FILE_COLLECTION =
-            GradleVersion.current().compareTo(GradleVersion.version("5.3")) >= 0
+    private static final GradleVersion CURRENT = GradleVersion.current()
+    private static final boolean SUPPORTS_OBJECTS_FILE_PROPERTY = CURRENT >= GradleVersion.version("5.0")
+    private static final boolean SUPPORTS_PROPERTY_CONVENTION = CURRENT >= GradleVersion.version("5.1")
+    private static final boolean SUPPORTS_OBJECTS_FILE_COLLECTION = CURRENT >= GradleVersion.version("5.3")
 
     private GradleCompat() {}
 
     static ConfigurableFileCollection fileCollection(ObjectFactory objects, ProjectLayout layout) {
-        // ObjectFactory.fileCollection() was added in Gradle 5.3; on older versions use ProjectLayout.configurableFiles().
         return SUPPORTS_OBJECTS_FILE_COLLECTION ? objects.fileCollection() : layout.configurableFiles()
     }
 
     static RegularFileProperty fileProperty(ObjectFactory objects, ProjectLayout layout, RegularFile defaultFile = null) {
-        // ObjectFactory.fileProperty() was added in Gradle 5.0; on 4.x, fall back to ProjectLayout.fileProperty().
-        def fileProp = IS_VERSION_4 ? layout.fileProperty() : objects.fileProperty()
+        def fileProp = SUPPORTS_OBJECTS_FILE_PROPERTY ? objects.fileProperty() : layout.fileProperty()
 
         if (defaultFile != null) {
-            if (IS_VERSION_4) {
-                fileProp.set(defaultFile)
-            } else {
+            if (SUPPORTS_PROPERTY_CONVENTION) {
                 fileProp.convention(defaultFile)
+            } else {
+                fileProp.set(defaultFile)
             }
         }
 
@@ -40,10 +39,10 @@ abstract class GradleCompat {
         def prop = objects.property(Boolean)
 
         if (defaultBoolean != null) {
-            if (IS_VERSION_4) {
-                prop.set(defaultBoolean)
-            } else {
+            if (SUPPORTS_PROPERTY_CONVENTION) {
                 prop.convention(defaultBoolean)
+            } else {
+                prop.set(defaultBoolean)
             }
         }
 
