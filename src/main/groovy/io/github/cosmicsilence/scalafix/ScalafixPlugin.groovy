@@ -31,12 +31,9 @@ class ScalafixPlugin implements Plugin<Project> {
             cfg.description = "Dependencies containing external Scalafix rules"
         })
 
-        def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
         RegularFile defaultConfigFile = locateDefaultConfigFile(project) ?: locateDefaultConfigFile(project.rootProject)
-
-        if (defaultConfigFile != null) {
-            GradleCompat.setConvention(extension.configFile, defaultConfigFile)
-        }
+        def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
+        GradleCompat.setConvention(extension.configFile, defaultConfigFile)
 
         project.afterEvaluate {
             if (!project.plugins.hasPlugin(ScalaPlugin)) {
