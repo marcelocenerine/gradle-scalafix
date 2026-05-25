@@ -12,9 +12,6 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.SourceSet
 import scalafix.interfaces.ScalafixMainMode
 
-import static scalafix.interfaces.ScalafixMainMode.CHECK
-import static scalafix.interfaces.ScalafixMainMode.IN_PLACE
-
 /** Gradle plugin for running Scalafix */
 class ScalafixPlugin implements Plugin<Project> {
 
@@ -30,15 +27,15 @@ class ScalafixPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        def configuration = project.configurations.create(EXT_RULES_CONFIGURATION, { Configuration cfg ->
+        def extRulesConfiguration = project.configurations.create(EXT_RULES_CONFIGURATION, { Configuration cfg ->
             cfg.description = "Dependencies containing external Scalafix rules"
         })
 
         def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
-        RegularFile defaultConfig = locateDefaultConfigFile(project) ?: locateDefaultConfigFile(project.rootProject)
+        RegularFile defaultConfigFile = locateDefaultConfigFile(project) ?: locateDefaultConfigFile(project.rootProject)
 
-        if (defaultConfig != null) {
-            GradleCompat.setConvention(extension.configFile, defaultConfig)
+        if (defaultConfigFile != null) {
+            GradleCompat.setConvention(extension.configFile, defaultConfigFile)
         }
 
         project.afterEvaluate {
@@ -46,11 +43,11 @@ class ScalafixPlugin implements Plugin<Project> {
                 throw new GradleException("The 'scala' plugin must be applied")
             }
 
-            configureTasks(project, extension, configuration)
+            configureTasks(project, extension, extRulesConfiguration)
         }
     }
 
-    private void configureTasks(Project project, ScalafixExtension extension, Configuration configuration) {
+    private void configureTasks(Project project, ScalafixExtension extension, Configuration extRulesConfiguration) {
         def fixTask = project.tasks.create(FIX_TASK, {
             group = ScalafixPlugin.TASK_GROUP
             description = 'Runs Scalafix on Scala sources'
@@ -77,22 +74,32 @@ class ScalafixPlugin implements Plugin<Project> {
             })
             scalaSourceSet.getCompileTask().dependsOn semanticDbTask
 
-            def cliCfg = createScalafixCliConfiguration(project, scalaSourceSet)
-            configureScalafixTaskForSourceSet(project, scalaSourceSet, IN_PLACE, fixTask, extension, configuration, cliCfg, configureSemanticDb)
-            configureScalafixTaskForSourceSet(project, scalaSourceSet, CHECK, checkTask, extension, configuration, cliCfg, configureSemanticDb)
+            def cliConfiguration = createCliConfiguration(project, scalaSourceSet)
+            [[ScalafixMainMode.IN_PLACE, fixTask], [ScalafixMainMode.CHECK, checkTask]].each { mode, parentTask ->
+                configureScalafixTaskForSourceSet(
+                        project,
+                        scalaSourceSet,
+                        mode,
+                        parentTask,
+                        extension,
+                        extRulesConfiguration,
+                        cliConfiguration,
+                        configureSemanticDb
+                )
+            }
         }
     }
 
-    private Configuration createScalafixCliConfiguration(Project project, ScalaSourceSet sourceSet) {
+    private Configuration createCliConfiguration(Project project, ScalaSourceSet sourceSet) {
         def cfgName = SCALAFIX_CLI_CONFIGURATION_PREFIX + sourceSet.getName().capitalize()
-        def cliCfg = project.configurations.create(cfgName, { Configuration cfg ->
+        def cliConfiguration = project.configurations.create(cfgName, { Configuration cfg ->
             cfg.canBeConsumed = false
             cfg.canBeResolved = true
             cfg.visible = false
             cfg.transitive = true
             cfg.description = "Scalafix CLI dependencies for source set '${sourceSet.getName()}'"
         })
-        cliCfg.withDependencies { deps ->
+        cliConfiguration.withDependencies { deps ->
             try {
                 def scalaVersion = resolveScalaVersion(sourceSet)
                 deps.add(project.dependencies.create(ScalafixProps.getScalafixCliArtifactCoordinates(scalaVersion)))
@@ -102,7 +109,7 @@ class ScalafixPlugin implements Plugin<Project> {
                 // earlier during dependency resolution.
             }
         }
-        return cliCfg
+        return cliConfiguration
     }
 
     private void configureScalafixTaskForSourceSet(Project project,
