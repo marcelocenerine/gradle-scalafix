@@ -1,16 +1,17 @@
 package io.github.cosmicsilence.scalafix
 
 import io.github.cosmicsilence.compat.GradleCompat
-import org.gradle.api.Project
-import org.gradle.api.file.RegularFile
+import org.gradle.api.Action
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 
-class ScalafixExtension {
+import javax.inject.Inject
 
-    private static final String DEFAULT_CONFIG_FILE = ".scalafix.conf"
+class ScalafixExtension {
 
     /**
      * Scalafix configuration file. If not specified, the plugin will try to find
@@ -43,22 +44,16 @@ class ScalafixExtension {
      */
     private final SemanticdbParameters semanticdb
 
-    private final Project project
+    private final ProjectLayout layout
 
-    ScalafixExtension(Project project) {
-        this.project = project
-
-        RegularFile defaultRegularFile = locateConfigFile(project)?: locateConfigFile(project.rootProject)
-        configFile = GradleCompat.fileProperty(project, defaultRegularFile)
-        includes = project.objects.setProperty(String)
-        excludes = project.objects.setProperty(String)
-        ignoreSourceSets = project.objects.setProperty(String)
-        semanticdb = project.objects.newInstance(SemanticdbParameters, project)
-    }
-
-    private RegularFile locateConfigFile(Project project) {
-        RegularFile configFile = project.layout.projectDirectory.file(DEFAULT_CONFIG_FILE)
-        return (configFile.asFile.exists() && configFile.asFile.isFile()) ? configFile : null
+    @Inject
+    ScalafixExtension(ObjectFactory objects, ProjectLayout layout) {
+        this.layout = layout
+        configFile = GradleCompat.fileProperty(objects, layout)
+        includes = objects.setProperty(String)
+        excludes = objects.setProperty(String)
+        ignoreSourceSets = objects.setProperty(String)
+        semanticdb = objects.newInstance(SemanticdbParameters, objects)
     }
 
     /**
@@ -68,7 +63,7 @@ class ScalafixExtension {
      * project's directory, in this order.
      */
     void setConfigFile(String path) {
-        configFile.set(project.file(path))
+        configFile.set(layout.projectDirectory.file(path))
     }
 
     @Nested
@@ -77,7 +72,7 @@ class ScalafixExtension {
         return semanticdb
     }
 
-    void semanticdb(Closure closure) {
-        project.configure(semanticdb, closure)
+    void semanticdb(Action<? super SemanticdbParameters> action) {
+        action.execute(semanticdb)
     }
 }

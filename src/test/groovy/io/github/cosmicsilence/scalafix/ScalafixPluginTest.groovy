@@ -415,6 +415,24 @@ class ScalafixPluginTest extends Specification {
         !task.configFile.isPresent()
     }
 
+    def 'scalafix lets the user override the default config file via convention'() {
+        given:
+        File defaultConfig = new File(scalaProject.projectDir, '.scalafix.conf')
+        defaultConfig.write 'rules = [Foo]'
+        File customConfig = new File(scalaProject.projectDir, '.custom.conf')
+        customConfig.write 'rules = [Bar]'
+
+        applyScalafixPlugin(scalaProject)
+        scalaProject.scalafix.configFile.convention(scalaProject.layout.projectDirectory.file('.custom.conf'))
+
+        when:
+        scalaProject.evaluate()
+
+        then:
+        ScalafixTask task = scalaProject.tasks.checkScalafixMain
+        task.configFile.get().asFile.path == customConfig.path
+    }
+
     def 'scalafix should only select sources matching include filter'() {
         given:
         applyScalafixPlugin(scalaProject)
