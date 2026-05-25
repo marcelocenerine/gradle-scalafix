@@ -23,29 +23,28 @@ abstract class GradleCompat {
 
     static RegularFileProperty fileProperty(ObjectFactory objects, ProjectLayout layout, RegularFile defaultFile = null) {
         def fileProp = SUPPORTS_OBJECTS_FILE_PROPERTY ? objects.fileProperty() : layout.fileProperty()
-
         if (defaultFile != null) {
-            if (SUPPORTS_PROPERTY_CONVENTION) {
-                fileProp.convention(defaultFile)
-            } else {
-                fileProp.set(defaultFile)
-            }
+            setConvention(fileProp, defaultFile)
         }
-
         return fileProp
     }
 
     static Property<Boolean> booleanProperty(ObjectFactory objects, Boolean defaultBoolean = null) {
         def prop = objects.property(Boolean)
-
         if (defaultBoolean != null) {
-            if (SUPPORTS_PROPERTY_CONVENTION) {
-                prop.convention(defaultBoolean)
-            } else {
-                prop.set(defaultBoolean)
-            }
+            setConvention(prop, defaultBoolean)
         }
-
         return prop
+    }
+
+    static <T> Property<T> setConvention(Property<T> property, T value) {
+        // Property.convention() was added in Gradle 5.1; on older versions use .set() as a best-effort fallback
+        // (set() puts the property in the "explicit value" state, which user-supplied conventions cannot override).
+        if (SUPPORTS_PROPERTY_CONVENTION) {
+            property.convention(value)
+        } else {
+            property.set(value)
+        }
+        return property
     }
 }

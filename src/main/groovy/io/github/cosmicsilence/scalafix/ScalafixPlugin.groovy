@@ -1,5 +1,6 @@
 package io.github.cosmicsilence.scalafix
 
+import io.github.cosmicsilence.compat.GradleCompat
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -29,14 +30,15 @@ class ScalafixPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
         def configuration = project.configurations.create(EXT_RULES_CONFIGURATION, { Configuration cfg ->
             cfg.description = "Dependencies containing external Scalafix rules"
         })
 
+        def extension = project.extensions.create(EXTENSION, ScalafixExtension, project.objects, project.layout)
         RegularFile defaultConfig = locateDefaultConfigFile(project) ?: locateDefaultConfigFile(project.rootProject)
+
         if (defaultConfig != null) {
-            extension.configFile.set(defaultConfig)
+            GradleCompat.setConvention(extension.configFile, defaultConfig)
         }
 
         project.afterEvaluate {
