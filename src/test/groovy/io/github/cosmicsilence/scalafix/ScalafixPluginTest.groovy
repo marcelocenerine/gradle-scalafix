@@ -132,7 +132,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.checkScalafixMain
         task.dependsOn.find { taskPredicate(it, 'compileScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.CHECK
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
@@ -163,7 +163,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.checkScalafixTest
         task.dependsOn.find { taskPredicate(it, 'compileTestScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.CHECK
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
@@ -208,7 +208,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.scalafixMain
         task.dependsOn.find { taskPredicate(it, 'compileScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.IN_PLACE
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
@@ -239,7 +239,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.scalafixTest
         task.dependsOn.find { taskPredicate(it, 'compileTestScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.IN_PLACE
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
@@ -271,7 +271,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.scalafixFoo
         task.dependsOn.find { taskPredicate(it, 'compileFooScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.IN_PLACE
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
@@ -303,7 +303,7 @@ class ScalafixPluginTest extends Specification {
         then:
         ScalafixTask task = scalaProject.tasks.checkScalafixFoo
         task.dependsOn.find { taskPredicate(it, 'compileFooScala') }
-        task.dependsOn.find { configurationPredicate(it, 'scalafix') }
+        task.toolClasspath.from.find { configurationPredicate(it, 'scalafix') }
         task.mode == ScalafixMainMode.CHECK
         task.configFile.get().asFile.path == "${scalaProject.projectDir}/.custom.conf"
         task.sourceRoot == scalaProject.projectDir.path
