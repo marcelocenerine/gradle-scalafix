@@ -15,8 +15,8 @@ import static io.github.cosmicsilence.scalafix.ScalafixPluginFunctionalTest.isSc
 
 class ScalafixPluginFunctionalTest extends Specification {
 
-    private static final String SCALA_2_VERSION = '2.12.20'
-    private static final String SCALA_3_VERSION = '3.3.5'
+    private static final String SCALA_2_VERSION = '2.12.21'
+    private static final String SCALA_3_VERSION = '3.3.7'
 
     def 'scalafixMain task should run compileScala by default'() {
         given:
@@ -27,12 +27,10 @@ class ScalafixPluginFunctionalTest extends Specification {
 
         then:
         buildResult.output.contains('''
-:configSemanticDBMain SKIPPED
 :compileScala SKIPPED
 :scalafixMain SKIPPED
 ''')
         buildResult.output.contains('''
-:configSemanticDBTest SKIPPED
 :compileTestScala SKIPPED
 :scalafixTest SKIPPED
 :scalafix SKIPPED
@@ -48,12 +46,10 @@ class ScalafixPluginFunctionalTest extends Specification {
 
         then:
         buildResult.output.contains('''
-:configSemanticDBMain SKIPPED
 :compileScala SKIPPED
 :scalafixMain SKIPPED
 ''')
         buildResult.output.contains('''
-:configSemanticDBTest SKIPPED
 :compileTestScala SKIPPED
 :scalafixTest SKIPPED
 :scalafix SKIPPED
@@ -72,9 +68,7 @@ class ScalafixPluginFunctionalTest extends Specification {
 :scalafixTest SKIPPED
 :scalafix SKIPPED
 ''')
-        !buildResult.output.contains(':configSemanticDBMain')
         !buildResult.output.contains(':compileScala')
-        !buildResult.output.contains(':configSemanticDBTest')
         !buildResult.output.contains(':compileTestScala')
     }
 
@@ -87,12 +81,10 @@ class ScalafixPluginFunctionalTest extends Specification {
 
         then:
         buildResult.output.contains('''
-:configSemanticDBMain SKIPPED
 :compileScala SKIPPED
 :checkScalafixMain SKIPPED
 ''')
         buildResult.output.contains('''
-:configSemanticDBTest SKIPPED
 :compileTestScala SKIPPED
 :checkScalafixTest SKIPPED
 :checkScalafix SKIPPED
@@ -108,12 +100,10 @@ class ScalafixPluginFunctionalTest extends Specification {
 
         then:
         buildResult.output.contains('''
-:configSemanticDBMain SKIPPED
 :compileScala SKIPPED
 :checkScalafixMain SKIPPED
 ''')
         buildResult.output.contains('''
-:configSemanticDBTest SKIPPED
 :compileTestScala SKIPPED
 :checkScalafixTest SKIPPED
 :checkScalafix SKIPPED
@@ -132,9 +122,7 @@ class ScalafixPluginFunctionalTest extends Specification {
 :checkScalafixTest SKIPPED
 :checkScalafix SKIPPED
 ''')
-        !buildResult.output.contains(':configSemanticDBMain')
         !buildResult.output.contains(':compileScala')
-        !buildResult.output.contains(':configSemanticDBTest')
         !buildResult.output.contains(':compileTestScala')
     }
 
@@ -152,13 +140,10 @@ sourceSets {
         BuildResult buildResult = runGradle(projectDir, 'scalafix', '-m')
 
         then:
-        buildResult.output.contains(':configSemanticDBMain SKIPPED')
         buildResult.output.contains(':compileScala SKIPPED')
         buildResult.output.contains(':scalafixMain SKIPPED')
-        buildResult.output.contains(':configSemanticDBTest SKIPPED')
         buildResult.output.contains(':compileTestScala SKIPPED')
         buildResult.output.contains(':scalafixTest SKIPPED')
-        buildResult.output.contains(':configSemanticDBIntegTest SKIPPED')
         buildResult.output.contains(':compileIntegTestScala SKIPPED')
         buildResult.output.contains(':scalafixIntegTest SKIPPED')
     }
@@ -177,13 +162,10 @@ sourceSets {
         BuildResult buildResult = runGradle(projectDir, 'checkScalafix', '-m')
 
         then:
-        buildResult.output.contains(':configSemanticDBMain SKIPPED')
         buildResult.output.contains(':compileScala SKIPPED')
         buildResult.output.contains(':checkScalafixMain SKIPPED')
-        buildResult.output.contains(':configSemanticDBTest SKIPPED')
         buildResult.output.contains(':compileTestScala SKIPPED')
         buildResult.output.contains(':checkScalafixTest SKIPPED')
-        buildResult.output.contains(':configSemanticDBIntegTest SKIPPED')
         buildResult.output.contains(':compileIntegTestScala SKIPPED')
         buildResult.output.contains(':checkScalafixIntegTest SKIPPED')
     }
@@ -226,9 +208,6 @@ checkScalafix - Fails if running Scalafix produces a diff or a linter error mess
 checkScalafixFoo - Fails if running Scalafix produces a diff or a linter error message. Won't write to files in 'foo'
 checkScalafixMain - Fails if running Scalafix produces a diff or a linter error message. Won't write to files in 'main'
 checkScalafixTest - Fails if running Scalafix produces a diff or a linter error message. Won't write to files in 'test'
-configSemanticDBFoo - Configures the SemanticDB Scala compiler for 'foo'
-configSemanticDBMain - Configures the SemanticDB Scala compiler for 'main'
-configSemanticDBTest - Configures the SemanticDB Scala compiler for 'test'
 scalafix - Runs Scalafix on Scala sources
 scalafixFoo - Runs Scalafix on Scala sources in 'foo'
 scalafixMain - Runs Scalafix on Scala sources in 'main'
@@ -334,6 +313,92 @@ scalafix {
         buildDir.eachFileRecurse {
             assert !it.name.endsWith('.semanticdb')
         }
+    }
+
+    @Requires({ gradleVersion() >= '8.0' })
+    def 'scalafix should work with the configuration cache enabled on Scala 2.x'() {
+        given:
+        File projectDir = createScalaProject()
+        createScalafixConfig(projectDir, 'rules = [ DisableSyntax ]')
+        createSourceFile(projectDir, '''
+object HelloWorld {
+  val i: Int = 3
+}
+''', 'main')
+
+        when:
+        BuildResult firstRun = runGradle(projectDir, '--configuration-cache', 'scalafix')
+        BuildResult secondRun = runGradle(projectDir, '--configuration-cache', 'scalafix')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+        !firstRun.output.contains('Configuration cache problems found')
+        secondRun.output.contains('Reusing configuration cache')
+        !secondRun.output.contains('Configuration cache problems found')
+    }
+
+    @Requires({ gradleVersion() >= '8.0' && isScalaVersionSupported(SCALA_3_VERSION) })
+    def 'scalafix should work with the configuration cache enabled on Scala 3.x'() {
+        given:
+        File projectDir = createScalaProject('', SCALA_3_VERSION)
+        createScalafixConfig(projectDir, 'rules = [ DisableSyntax ]')
+        createSourceFile(projectDir, '''
+object HelloWorld {
+  val i: Int = 3
+}
+''', 'main')
+
+        when:
+        BuildResult firstRun = runGradle(projectDir, '--configuration-cache', 'scalafix')
+        BuildResult secondRun = runGradle(projectDir, '--configuration-cache', 'scalafix')
+
+        then:
+        firstRun.output.contains('Configuration cache entry stored')
+        !firstRun.output.contains('Configuration cache problems found')
+        secondRun.output.contains('Reusing configuration cache')
+        !secondRun.output.contains('Configuration cache problems found')
+    }
+
+    @Requires({ gradleVersion() >= '8.0' })
+    def 'configuration cache is invalidated when scalafix.rules property changes between runs'() {
+        given:
+        File projectDir = createScalaProject()
+        createSourceFile(projectDir, 'object Foo', 'main')
+
+        when:
+        BuildResult withRules = runGradle(projectDir, '--configuration-cache', '-Pscalafix.rules=DisableSyntax', 'scalafix')
+        BuildResult withoutRules = runGradle(projectDir, '--configuration-cache', 'scalafix')
+        BuildResult withoutRulesAgain = runGradle(projectDir, '--configuration-cache', 'scalafix')
+
+        then:
+        withRules.output.contains('Configuration cache entry stored')
+        !withoutRules.output.contains('Reusing configuration cache')
+        withoutRules.output.contains('Configuration cache entry stored')
+        withoutRulesAgain.output.contains('Reusing configuration cache')
+    }
+
+    def 'compileScala should be restored from the build cache on consecutive scalafix runs'() {
+        given:
+        File projectDir = createScalaProject()
+        createScalafixConfig(projectDir, 'rules = [ DisableSyntax ]')
+        createSourceFile(projectDir, '''
+object HelloWorld {
+  val i: Int = 3
+}
+''', 'main')
+        new File(projectDir, 'settings.gradle') << """
+buildCache {
+    local { directory = '${new File(projectDir, '.gradle/build-cache').absolutePath}' }
+}
+"""
+
+        when:
+        runGradle(projectDir, '--build-cache', 'scalafix')
+        runGradle(projectDir, 'clean')
+        BuildResult secondRun = runGradle(projectDir, '--build-cache', 'scalafix')
+
+        then:
+        secondRun.output.contains(':compileScala FROM-CACHE')
     }
 
     def 'checkScalafix and scalafix tasks should not fail when no rules are informed'() {

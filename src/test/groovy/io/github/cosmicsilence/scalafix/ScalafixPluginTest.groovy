@@ -35,10 +35,12 @@ class ScalafixPluginTest extends Specification {
         scalaProject.tasks.checkScalafix
         scalaProject.tasks.checkScalafixMain
         scalaProject.tasks.checkScalafixTest
-        scalaProject.tasks.configSemanticDBMain
-        scalaProject.tasks.configSemanticDBTest
         scalaProject.extensions.scalafix
         scalaProject.configurations.scalafix
+        scalaProject.configurations.scalafixCliMain
+        scalaProject.configurations.scalafixCliTest
+        scalaProject.configurations.semanticdbMain
+        scalaProject.configurations.semanticdbTest
     }
 
     def 'The plugin throws an exception if the scala plugin has not been applied to the project'() {
@@ -77,33 +79,44 @@ class ScalafixPluginTest extends Specification {
         // forces plugin configuration
         scalaProject.tasks.scalafixMain
         scalaProject.tasks.scalafixTest
-        scalaProject.tasks.configSemanticDBMain
-        scalaProject.tasks.configSemanticDBTest
 
         then:
         scalaProject.configurations.scalafix.state == Configuration.State.UNRESOLVED
-        scalaProject.configurations.testCompileClasspath.state == Configuration.State.UNRESOLVED
+        scalaProject.configurations.scalafixCliMain.state == Configuration.State.UNRESOLVED
+        scalaProject.configurations.scalafixCliTest.state == Configuration.State.UNRESOLVED
+        scalaProject.configurations.semanticdbMain.state == Configuration.State.UNRESOLVED
+        scalaProject.configurations.semanticdbTest.state == Configuration.State.UNRESOLVED
+        scalaProject.configurations.compileClasspath.state == Configuration.State.UNRESOLVED
         scalaProject.configurations.testCompileClasspath.state == Configuration.State.UNRESOLVED
     }
 
-    def 'configSemanticDB* tasks configuration validation'() {
+    def 'plugin wires SemanticDB into compileScala when autoConfigure=true'() {
         given:
         applyScalafixPlugin(scalaProject)
-        scalaProject.scalafix.semanticdb.version = '4.8.3'
 
         when:
         scalaProject.evaluate()
 
         then:
-        ConfigSemanticDbTask mainTask = scalaProject.tasks.configSemanticDBMain
-        mainTask.sourceSet.name == 'main'
-        mainTask.semanticDbVersion == '4.8.3'
-        mainTask.scalaVersion.get() == SCALA_VERSION
+        def compileMain = scalaProject.tasks.compileScala
+        def compileTest = scalaProject.tasks.compileTestScala
+        compileMain.actions.any { semanticDbActionPredicate(it) }
+        compileTest.actions.any { semanticDbActionPredicate(it) }
+    }
 
-        ConfigSemanticDbTask testTask = scalaProject.tasks.configSemanticDBTest
-        testTask.sourceSet.name == 'test'
-        testTask.semanticDbVersion == '4.8.3'
-        testTask.scalaVersion.get() == SCALA_VERSION
+    def 'plugin does not wire SemanticDB into compileScala when autoConfigure=false'() {
+        given:
+        applyScalafixPlugin(scalaProject)
+        scalaProject.scalafix.semanticdb.autoConfigure = false
+
+        when:
+        scalaProject.evaluate()
+
+        then:
+        !scalaProject.configurations.findByName('semanticdbMain')
+        !scalaProject.configurations.findByName('semanticdbTest')
+        !scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
+        !scalaProject.tasks.compileTestScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'checkScalafix task configuration validation'() {
@@ -124,7 +137,6 @@ class ScalafixPluginTest extends Specification {
         given:
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -146,16 +158,15 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'checkScalafixTest task configuration validation'() {
         given:
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -177,9 +188,9 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'scalafix task configuration validation'() {
@@ -200,7 +211,6 @@ class ScalafixPluginTest extends Specification {
         given:
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -222,16 +232,15 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'scalafixTest task configuration validation'() {
         given:
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -253,9 +262,9 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'scalafix<SourceSet> task configuration validation when additional source set is present'() {
@@ -263,7 +272,6 @@ class ScalafixPluginTest extends Specification {
         def scalaProject = buildScalaProject(null, ["foo"])
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -285,9 +293,9 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'checkScalafix<SourceSet> task configuration validation when additional source set is present'() {
@@ -295,7 +303,6 @@ class ScalafixPluginTest extends Specification {
         def scalaProject = buildScalaProject(null, ["foo"])
         applyScalafixPlugin(scalaProject)
         scalaProject.scalafix.configFile = scalaProject.file('.custom.conf')
-        scalaProject.ext.'scalafix.rules' = 'Foo,Bar'
 
         when:
         scalaProject.evaluate()
@@ -317,9 +324,9 @@ class ScalafixPluginTest extends Specification {
         task.classpath.get().find { it.endsWith("scala-library-${SCALA_VERSION}.jar") }
         task.compileOptions.get() == COMPILER_OPTS
         task.scalaVersion.get() == SCALA_VERSION
-        task.rules.get().containsAll(['Foo', 'Bar'])
+
         task.semanticDbConfigured
-        scalaProject.tasks.compileScala.dependsOn.find { taskPredicate(it, 'configSemanticDBMain') }
+        scalaProject.tasks.compileScala.actions.any { semanticDbActionPredicate(it) }
     }
 
     def 'scalafix* and checkScalafix* tasks configuration when semanticdb.autoconfigure is false'() {
@@ -490,10 +497,10 @@ class ScalafixPluginTest extends Specification {
         !scalaProject.tasks.findByName('checkScalafixMain')
         !scalaProject.tasks.findByName('scalafixBar')
         !scalaProject.tasks.findByName('checkScalafixBar')
-        !scalaProject.tasks.findByName('configSemanticDBBar')
+        !scalaProject.configurations.findByName('semanticdbBar')
         scalaProject.tasks.findByName('scalafixTest')
         scalaProject.tasks.findByName('checkScalafixTest')
-        scalaProject.tasks.findByName('configSemanticDBTest')
+        scalaProject.configurations.findByName('semanticdbTest')
     }
 
     private applyScalaPlugin(Project project) {
@@ -555,6 +562,19 @@ class ScalafixPluginTest extends Specification {
     private static boolean taskPredicate(Object obj, String name) {
         if (obj instanceof Task) return obj.name == name
         if (obj instanceof TaskProvider) return obj.name == name
+        return false
+    }
+
+    private static boolean semanticDbActionPredicate(action) {
+        // Gradle wraps actions registered via doFirst; the wrapper exposes the underlying
+        // action via an 'action' field. Try the direct instanceof first and fall back to
+        // reflective unwrap.
+        if (action instanceof AppendSemanticDbCompilerOptionsAction) return true
+        def field = action.class.declaredFields.find { it.name == 'action' }
+        if (field != null) {
+            field.accessible = true
+            return field.get(action) instanceof AppendSemanticDbCompilerOptionsAction
+        }
         return false
     }
 }

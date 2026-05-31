@@ -1,11 +1,13 @@
-package io.github.cosmicsilence.compat
+package io.github.cosmicsilence.scalafix
 
+import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.util.GradleVersion
 
 abstract class GradleCompat {
@@ -14,6 +16,9 @@ abstract class GradleCompat {
     private static final boolean SUPPORTS_OBJECTS_FILE_PROPERTY = CURRENT >= GradleVersion.version("5.0")
     private static final boolean SUPPORTS_PROPERTY_CONVENTION = CURRENT >= GradleVersion.version("5.1")
     private static final boolean SUPPORTS_OBJECTS_FILE_COLLECTION = CURRENT >= GradleVersion.version("5.3")
+    private static final boolean SUPPORTS_GRADLE_PROPERTY_PROVIDER = CURRENT >= GradleVersion.version("6.2")
+    // Provider.map() added in 5.0; Provider.orElse(T) added in 5.6
+    private static final boolean SUPPORTS_PROVIDER_MAP_AND_ORELSE = CURRENT >= GradleVersion.version("5.6")
 
     private GradleCompat() {}
 
@@ -31,9 +36,29 @@ abstract class GradleCompat {
         return setConvention(prop, defaultBoolean)
     }
 
+    static Provider<String> gradleProperty(Project project, String name) {
+        if (SUPPORTS_GRADLE_PROPERTY_PROVIDER) {
+            return project.providers.gradleProperty(name)
+        }
+        return project.provider { project.findProperty(name)?.toString() }
+    }
+
+    static Provider<List<String>> gradlePropertyAsList(Project project, String name) {
+        if (SUPPORTS_PROVIDER_MAP_AND_ORELSE) {
+            return gradleProperty(project, name)
+                    .map { String prop -> GradleCompat.splitCommaSeparated(prop) }
+                    .orElse([])
+        }
+
+        def items = splitCommaSeparated(project.findProperty(name)?.toString() ?: '')
+        return project.provider { items }
+    }
+
+    static List<String> splitCommaSeparated(String value) {
+        value.split(/\s*,\s*/).findAll { it }.toList()
+    }
+
     static <T> Property<T> setConvention(Property<T> prop, T value) {
-        // Property.convention() was added in Gradle 5.1; on older versions use .set() as a best-effort fallback
-        // (set() puts the property in the "explicit value" state, which user-supplied conventions cannot override).
         if (value == null) return prop
 
         if (SUPPORTS_PROPERTY_CONVENTION) {

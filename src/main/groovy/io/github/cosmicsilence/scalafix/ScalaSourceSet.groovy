@@ -27,14 +27,6 @@ class ScalaSourceSet {
         return sourceSet.name
     }
 
-    File getOutputDir() {
-        // Supported in Gradle >= 6.1
-        if (compileTask.hasProperty('destinationDirectory')) {
-            return compileTask.destinationDirectory.asFile.get()
-        }
-        return compileTask.destinationDir
-    }
-
     List<File> getFullClasspath() {
         return getClassesDirs() + getJarDependencies()
     }
@@ -71,22 +63,6 @@ class ScalaSourceSet {
 
     List<String> getCompilerOptions() {
         return compileTask.scalaCompileOptions.additionalParameters ?: []
-    }
-
-    void addCompilerOptions(List<String> opts) {
-        compileTask.scalaCompileOptions.additionalParameters = getCompilerOptions() + opts
-    }
-
-    void addCompilerPlugin(String pluginCoordinates) {
-        def dependency = project.dependencies.create(pluginCoordinates)
-        def configuration = project.configurations.detachedConfiguration(dependency).setTransitive(false)
-
-        // Supported in Gradle >= 6.4
-        if (compileTask.hasProperty('scalaCompilerPlugins')) {
-            compileTask.scalaCompilerPlugins = (compileTask.scalaCompilerPlugins ?: project.files()) + configuration
-        } else {
-            addCompilerOptions(['-Xplugin:' + configuration.asPath])
-        }
     }
 
     static boolean isScalaSourceSet(Project project, SourceSet sourceSet) {

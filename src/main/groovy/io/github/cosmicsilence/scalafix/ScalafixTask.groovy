@@ -1,6 +1,6 @@
 package io.github.cosmicsilence.scalafix
 
-import io.github.cosmicsilence.compat.GradleCompat
+import io.github.cosmicsilence.scalafix.GradleCompat
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ProjectLayout

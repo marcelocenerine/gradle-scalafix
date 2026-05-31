@@ -40,16 +40,10 @@ abstract class ScalafixProps {
     }
 
     private static String getSupportedScalaVersion(String projectScalaVersion) {
-        switch (projectScalaVersion) {
-            case ~/^2\.12\..+$/:
-                return supportedScala212Version
-            case ~/^2\.13\..+$/:
-                return supportedScala213Version
-            case ~/^3\..+$/:
-                return supportedScala3Version
-            default:
-                throw new GradleException("Scala version '${projectScalaVersion}' is not supported")
-        }
+        if (ScalaVersions.isScala3(projectScalaVersion)) return supportedScala3Version
+        if (ScalaVersions.isScala213(projectScalaVersion)) return supportedScala213Version
+        if (ScalaVersions.isScala212(projectScalaVersion)) return supportedScala212Version
+        throw new GradleException("Scala version '${projectScalaVersion}' is not supported")
     }
 
     static String getSemanticDbArtifactCoordinates(String projectScalaVersion, Optional<String> scalametaVersionOverride) {
