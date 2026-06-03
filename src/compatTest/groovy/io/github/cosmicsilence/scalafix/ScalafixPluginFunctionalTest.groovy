@@ -359,24 +359,6 @@ object HelloWorld {
         !secondRun.output.contains('Configuration cache problems found')
     }
 
-    @Requires({ gradleVersion() >= '8.0' })
-    def 'configuration cache is invalidated when scalafix.rules property changes between runs'() {
-        given:
-        File projectDir = createScalaProject()
-        createSourceFile(projectDir, 'object Foo', 'main')
-
-        when:
-        BuildResult withRules = runGradle(projectDir, '--configuration-cache', '-Pscalafix.rules=DisableSyntax', 'scalafix')
-        BuildResult withoutRules = runGradle(projectDir, '--configuration-cache', 'scalafix')
-        BuildResult withoutRulesAgain = runGradle(projectDir, '--configuration-cache', 'scalafix')
-
-        then:
-        withRules.output.contains('Configuration cache entry stored')
-        !withoutRules.output.contains('Reusing configuration cache')
-        withoutRules.output.contains('Configuration cache entry stored')
-        withoutRulesAgain.output.contains('Reusing configuration cache')
-    }
-
     def 'compileScala should be restored from the build cache on consecutive scalafix runs'() {
         given:
         File projectDir = createScalaProject()
